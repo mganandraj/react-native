@@ -1,62 +1,139 @@
-/**
- * Copyright (c) 2015-present, Facebook, Inc.
- * All rights reserved.
- *
- * This source code is licensed under the BSD-style license found in the
- * LICENSE file in the root directory of this source tree. An additional grant
- * of patent rights can be found in the PATENTS file in the same directory.
- *
- */
-
 package com.facebook.react.uiapp;
-
-import android.app.Activity;
-import android.os.Bundle;
-
-import com.facebook.react.ReactActivity;
-import com.facebook.react.ReactActivityDelegate;
 
 import javax.annotation.Nullable;
 
-public class RNTesterActivity extends ReactActivity {
-  public static class RNTesterActivityDelegate extends ReactActivityDelegate {
-    private static final String PARAM_ROUTE = "route";
-    private Bundle mInitialProps = null;
-    private final @Nullable Activity mActivity;
+import android.app.Activity;
+import android.content.Intent;
+import android.net.Uri;
+import android.os.Build;
+import android.os.Bundle;
+import android.provider.Settings;
+import android.util.Log;
+import android.widget.Toast;
 
-    public RNTesterActivityDelegate(Activity activity, String mainComponentName) {
-      super(activity, mainComponentName);
-      this.mActivity = activity;
-    }
+import com.facebook.react.ReactApplication;
+import com.facebook.react.ReactInstanceManager;
+import com.facebook.react.ReactNativeHost;
+import com.facebook.react.ReactRootView;
+import com.facebook.react.common.ReactConstants;
+import com.facebook.react.modules.core.DefaultHardwareBackBtnHandler;
 
-    @Override
-    protected void onCreate(Bundle savedInstanceState) {
-      // Get remote param before calling super which uses it
-      Bundle bundle = mActivity.getIntent().getExtras();
-      if (bundle != null && bundle.containsKey(PARAM_ROUTE)) {
-        String routeUri = new StringBuilder("rntester://example/")
-          .append(bundle.getString(PARAM_ROUTE))
-          .append("Example")
-          .toString();
-        mInitialProps = new Bundle();
-        mInitialProps.putString("exampleFromAppetizeParams", routeUri);
-      }
-      super.onCreate(savedInstanceState);
-    }
+/**
+ * Base Activity for React Native applications.
+ */
+public class RNTesterActivity extends Activity implements DefaultHardwareBackBtnHandler {
 
-    @Override
-    protected Bundle getLaunchOptions() {
-      return mInitialProps;
-    }
-  }
+  private final int REQUEST_OVERLAY_PERMISSION_CODE = 1111;
 
-  @Override
-  protected ReactActivityDelegate createReactActivityDelegate() {
-    return new RNTesterActivityDelegate(this, getMainComponentName());
-  }
+  private static final String REDBOX_PERMISSION_GRANTED_MESSAGE =
 
-  @Override
-  protected String getMainComponentName() {
+    "Overlay permissions have been granted.";
+
+  private static final String REDBOX_PERMISSION_MESSAGE =
+
+    "Overlay permissions needs to be granted in order for react native apps to run in dev mode";
+
+  /**
+   * Returns the name of the main component registered from JavaScript.
+   * This is used to schedule rendering of the component.
+   * e.g. "MoviesApp"
+   */
+  protected @Nullable String getMainComponentName() {
     return "RNTesterApp";
+  }
+
+
+  @Override
+  protected void onCreate(Bundle savedInstanceState) {
+    super.onCreate(savedInstanceState);
+
+    boolean needsOverlayPermission = false;
+
+    if (getReactNativeHost().getUseDeveloperSupport() && Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
+      // Get permission to show redbox in dev builds.
+
+      if (!Settings.canDrawOverlays(this)) {
+        needsOverlayPermission = true;
+        Intent serviceIntent = new Intent(Settings.ACTION_MANAGE_OVERLAY_PERMISSION, Uri.parse("package:" + getPackageName()));
+        Log.w(ReactConstants.TAG, REDBOX_PERMISSION_MESSAGE);
+        Toast.makeText(this, REDBOX_PERMISSION_MESSAGE, Toast.LENGTH_LONG).show();
+        startActivityForResult(serviceIntent, REQUEST_OVERLAY_PERMISSION_CODE);
+      }
+    }
+
+    if (getMainComponentName() != null && !needsOverlayPermission) {
+      loadApp(getMainComponentName());
+    }
+  }
+
+   protected final ReactNativeHost getReactNativeHost() {
+     return ((ReactApplication) getApplication()).getReactNativeHost();
+  }
+
+  protected final ReactInstanceManager getReactInstanceManager() {
+    return getReactNativeHost().getReactInstanceManager();
+  }
+
+  protected final void loadApp(String appKey) {
+    mReactRootView = new ReactRootView(this);
+    mReactRootView.startReactApplication(
+      getReactNativeHost().getReactInstanceManager(),
+      appKey,
+      getLaunchOptions());
+
+    setContentView(mReactRootView);
+  }
+
+  protected @Nullable Bundle getLaunchOptions() {
+    return null;
+  }
+
+  private @Nullable
+  ReactRootView mReactRootView;
+
+  @Override
+  protected void onPause() {
+    super.onPause();
+
+    if (getReactNativeHost().hasInstance()) {
+      getReactNativeHost().getReactInstanceManager().onHostPause(this);
+    }
+  }
+
+
+
+  @Override
+  protected void onResume() {
+    super.onResume();
+
+    if (getReactNativeHost().hasInstance()) {
+      getReactNativeHost().getReactInstanceManager().onHostResume(this, this);
+    }
+  }
+
+
+
+  @Override
+  protected void onDestroy() {
+    super.onDestroy();
+
+    if (getReactNativeHost().hasInstance()) {
+      getReactNativeHost().getReactInstanceManager().onHostDestroy(this);
+    }
+  }
+
+
+  @Override
+  public void invokeDefaultOnBackPressed() {
+    super.onBackPressed();
+  }
+
+  @Override
+  public void onBackPressed() {
+    if (getReactNativeHost().hasInstance()) {
+      getReactNativeHost().getReactInstanceManager().onBackPressed();
+    } else {
+      super.onBackPressed();
+    }
   }
 }

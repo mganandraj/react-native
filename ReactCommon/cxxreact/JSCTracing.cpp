@@ -8,10 +8,13 @@
 #define USE_JSCTRACING 0
 #endif
 
-#if USE_JSCTRACING
+#define FBSYSTRACE_UNLIKELY(x) x
+#define FBSYSTRACE_LIKELY(x) x
+#define FBSYSTRACE_MAX_MESSAGE_LENGTH 1024
+#define FBSYSTRACE_MAX_SECTION_NAME_LENGTH 1024
 
 #include <algorithm>
-#include <fbsystrace.h>
+// #include <fbsystrace.h>
 #include <sys/types.h>
 #include <unistd.h>
 
@@ -19,8 +22,48 @@
 #include <jschelpers/JSCHelpers.h>
 #include <jschelpers/Value.h>
 
+#include <dlfcn.h>
+#include <android/log.h>
+
 using std::min;
 using namespace facebook::react;
+
+void *(*ATrace_beginSection) (const char* sectionName);
+void *(*ATrace_endSection) (void);
+void *(*ATrace_isEnabled) (void);
+
+typedef void *(*fp_ATrace_beginSection) (const char* sectionName);
+typedef void *(*fp_ATrace_endSection) (void);
+typedef void *(*fp_ATrace_isEnabled) (void);
+
+void initializeTracing()
+{
+  // Native Trace API is supported in API level 23
+  void *lib = dlopen("libandroid.so", RTLD_NOW | RTLD_LOCAL);
+  if (lib != NULL) {
+      //LOGI("Run with Trace Native API.");
+      // Retrieve function pointers from shared object.
+      ATrace_beginSection =
+              reinterpret_cast<fp_ATrace_beginSection >(
+                      dlsym(lib, "ATrace_beginSection"));
+      ATrace_endSection =
+              reinterpret_cast<fp_ATrace_endSection >(
+                      dlsym(lib, "ATrace_endSection"));
+      ATrace_isEnabled =
+              reinterpret_cast<fp_ATrace_isEnabled >(
+                      dlsym(lib, "ATrace_isEnabled"));
+  } else {
+    __android_log_print(ANDROID_LOG_ERROR, "AMG", "Unable to open libandroid.so.");
+    *((int*)0) = 0;
+  }
+
+  if(!ATrace_beginSection)
+  {
+    __android_log_print(ANDROID_LOG_ERROR, "AMG", "ATrace_beginSection not found.");
+    *((int*)0) = 0;
+  }
+
+}
 
 static int64_t int64FromJSValue(JSContextRef ctx, JSValueRef value, JSValueRef* exception) {
   return static_cast<int64_t>(JSC_JSValueToNumber(ctx, value, exception));
@@ -97,9 +140,9 @@ static JSValueRef nativeTraceBeginSection(
   }
 
   uint64_t tag = int64FromJSValue(ctx, arguments[0], exception);
-  if (!fbsystrace_is_tracing(tag)) {
-    return Value::makeUndefined(ctx);
-  }
+  //if (!fbsystrace_is_tracing(tag)) {
+   // return Value::makeUndefined(ctx);
+  //}
 
   char buf[FBSYSTRACE_MAX_MESSAGE_LENGTH];
   size_t pos = 0;
@@ -115,7 +158,8 @@ static JSValueRef nativeTraceBeginSection(
   }
 
 flush:
-  fbsystrace_trace_raw(buf, min(pos, sizeof(buf)-1));
+  // fbsystrace_trace_raw(buf, min(pos, sizeof(buf)-1));
+  ATrace_beginSection(buf);
 
   return Value::makeUndefined(ctx);
 }
@@ -136,31 +180,34 @@ static JSValueRef nativeTraceEndSection(
     return Value::makeUndefined(ctx);
   }
 
-  uint64_t tag = int64FromJSValue(ctx, arguments[0], exception);
-  if (!fbsystrace_is_tracing(tag)) {
-    return Value::makeUndefined(ctx);
-  }
+  //uint64_t tag = int64FromJSValue(ctx, arguments[0], exception);
+  //if (!fbsystrace_is_tracing(tag)) {
+   // return Value::makeUndefined(ctx);
+  //}
 
   if (FBSYSTRACE_LIKELY(argumentCount == 1)) {
-    fbsystrace_end_section(tag);
-  } else {
-    char buf[FBSYSTRACE_MAX_MESSAGE_LENGTH];
-    size_t pos = 0;
+    // fbsystrace_end_section(tag);
+    ATrace_endSection();
+  } // else {
+    // char buf[FBSYSTRACE_MAX_MESSAGE_LENGTH];
+    // size_t pos = 0;
 
-    buf[pos++] = 'E';
-    buf[pos++] = '|';
-    buf[pos++] = '|';
-    pos = copyArgsToBuffer(buf, sizeof(buf), pos, ctx, argumentCount - 1, arguments + 1);
-    if (FBSYSTRACE_UNLIKELY(pos >= sizeof(buf))) {
-      goto flush;
-    }
+    // buf[pos++] = 'E';
+    // buf[pos++] = '|';
+    // buf[pos++] = '|';
+    // pos = copyArgsToBuffer(buf, sizeof(buf), pos, ctx, argumentCount - 1, arguments + 1);
+    // if (FBSYSTRACE_UNLIKELY(pos >= sizeof(buf))) {
+    //   goto flush;
+    // }
 
-flush:
-    fbsystrace_trace_raw(buf, min(pos, sizeof(buf)-1));
-  }
+//flush:
+  //  fbsystrace_trace_raw(buf, min(pos, sizeof(buf)-1));
+  //}
 
   return Value::makeUndefined(ctx);
 }
+
+#if USE_JSCTRACING
 
 static JSValueRef beginOrEndAsync(
     bool isEnd,
@@ -306,9 +353,11 @@ namespace facebook {
 namespace react {
 
 void addNativeTracingHooks(JSGlobalContextRef ctx) {
-#if USE_JSCTRACING
+
   installGlobalFunction(ctx, "nativeTraceBeginSection", nativeTraceBeginSection);
   installGlobalFunction(ctx, "nativeTraceEndSection", nativeTraceEndSection);
+
+#if USE_JSCTRACING
   installGlobalFunction(ctx, "nativeTraceBeginAsyncSection", nativeTraceBeginAsyncSection);
   installGlobalFunction(ctx, "nativeTraceEndAsyncSection", nativeTraceEndAsyncSection);
   installGlobalFunction(ctx, "nativeTraceBeginAsyncFlow", nativeTraceBeginAsyncFlow);

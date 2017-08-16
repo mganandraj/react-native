@@ -184,17 +184,17 @@ const Systrace = {
    * beginEvent/endEvent for starting and then ending a profile within the same call stack frame
   **/
   beginEvent(profileName?: any, args?: any) {
-    if (_enabled) {
+    //if (_enabled) {
       profileName = typeof profileName === 'function' ?
         profileName() : profileName;
       global.nativeTraceBeginSection(TRACE_TAG_REACT_APPS, profileName, args);
-    }
+    //}
   },
 
   endEvent() {
-    if (_enabled) {
+    //if (_enabled) {
       global.nativeTraceEndSection(TRACE_TAG_REACT_APPS);
-    }
+    //}
   },
 
   /**

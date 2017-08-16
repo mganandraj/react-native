@@ -43,6 +43,8 @@
 #include <jsc_config_android.h>
 #endif
 
+void initializeTracing();
+
 namespace facebook {
 namespace react {
 
@@ -177,6 +179,8 @@ static bool canUseSamplingProfiler(JSContextRef context) {
 void JSCExecutor::initOnJSVMThread() throw(JSException) {
   SystraceSection s("JSCExecutor::initOnJSVMThread");
 
+  ::initializeTracing();
+
   #if defined(__APPLE__)
   const bool useCustomJSC = m_jscConfig.getDefault("UseCustomJSC", false).getBool();
   if (useCustomJSC) {
@@ -300,7 +304,7 @@ void JSCExecutor::loadApplicationScript(std::unique_ptr<const JSBigString> scrip
 
       flush();
 
-      ReactMarker::logMarker(ReactMarker::CREATE_REACT_CONTEXT_STOP);
+      ReactMarker::logMarker(ReactMarker::CREATE_REACT_CONTEXT_STOP););
       ReactMarker::logMarker(ReactMarker::RUN_JS_BUNDLE_STOP);
       return;
 
