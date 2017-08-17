@@ -9,6 +9,8 @@ import android.os.Build;
 import android.os.Bundle;
 import android.provider.Settings;
 import android.util.Log;
+import android.view.View;
+import android.widget.Button;
 import android.widget.Toast;
 
 import com.facebook.react.ReactApplication;
@@ -61,9 +63,16 @@ public class RNTesterActivity extends Activity implements DefaultHardwareBackBtn
       }
     }
 
-    if (getMainComponentName() != null && !needsOverlayPermission) {
-      loadApp(getMainComponentName());
-    }
+    setContentView(R.layout.activity_main);
+    Button btn = (Button)findViewById(R.id.button);
+    btn.setOnClickListener(new View.OnClickListener() {
+      @Override
+      public void onClick(View v) {
+        if (getMainComponentName() != null ) {
+          loadApp(getMainComponentName());
+        }
+      }
+    });
   }
 
    protected final ReactNativeHost getReactNativeHost() {
