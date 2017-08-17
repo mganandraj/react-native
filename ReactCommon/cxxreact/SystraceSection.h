@@ -3,7 +3,7 @@
 #pragma once
 
 #ifdef WITH_FBSYSTRACE
-#include <fbsystrace.h>
+#include "fbsystrace.h"
 #endif
 
 namespace facebook {

@@ -43,7 +43,7 @@
 #include <jsc_config_android.h>
 #endif
 
-void initializeTracing();
+#include "mssystrace.h"
 
 namespace facebook {
 namespace react {
@@ -117,6 +117,7 @@ static JSValueRef nativeInjectHMRUpdate(
 
 std::unique_ptr<JSExecutor> JSCExecutorFactory::createJSExecutor(
     std::shared_ptr<ExecutorDelegate> delegate, std::shared_ptr<MessageQueueThread> jsQueue) {
+  
   return folly::make_unique<JSCExecutor>(delegate, jsQueue, m_jscConfig);
 }
 
@@ -178,8 +179,6 @@ static bool canUseSamplingProfiler(JSContextRef context) {
 
 void JSCExecutor::initOnJSVMThread() throw(JSException) {
   SystraceSection s("JSCExecutor::initOnJSVMThread");
-
-  ::initializeTracing();
 
   #if defined(__APPLE__)
   const bool useCustomJSC = m_jscConfig.getDefault("UseCustomJSC", false).getBool();
@@ -343,9 +342,9 @@ void JSCExecutor::loadApplicationScript(std::unique_ptr<const JSBigString> scrip
       jsScript = adoptString(std::move(script));
       ReactMarker::logMarker(ReactMarker::JS_BUNDLE_STRING_CONVERT_STOP);
     }
-    #ifdef WITH_FBSYSTRACE
-    fbsystrace_end_section(TRACE_TAG_REACT_CXX_BRIDGE);
-    #endif
+    //#ifdef WITH_FBSYSTRACE
+    //fbsystrace_end_section(TRACE_TAG_REACT_CXX_BRIDGE);
+    //#endif
 
     SystraceSection s_("JSCExecutor::loadApplicationScript-evaluateScript");
     evaluateScript(m_context, jsScript, jsSourceURL);

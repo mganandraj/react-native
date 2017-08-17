@@ -21,6 +21,8 @@
 #include <mutex>
 #include <string>
 
+#include "mssystrace.h"
+
 namespace facebook {
 namespace react {
 
@@ -35,6 +37,9 @@ void Instance::initializeBridge(
     std::shared_ptr<JSExecutorFactory> jsef,
     std::shared_ptr<MessageQueueThread> jsQueue,
     std::shared_ptr<ModuleRegistry> moduleRegistry) {
+
+ms::initializeTracing();
+
   callback_ = std::move(callback);
   moduleRegistry_ = std::move(moduleRegistry);
 

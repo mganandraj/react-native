@@ -22,12 +22,15 @@ LOCAL_SRC_FILES := \
   ModuleRegistry.cpp \
   NativeToJsBridge.cpp \
   Platform.cpp \
+  mssystrace.cpp \
+  fbsystrace.cpp \
+ 
 
 LOCAL_C_INCLUDES := $(LOCAL_PATH)/..
 LOCAL_EXPORT_C_INCLUDES := $(LOCAL_C_INCLUDES)
 
 LOCAL_CFLAGS := \
-  -DLOG_TAG=\"ReactNative\"
+  -DLOG_TAG=\"ReactNative\" -DWITH_FBSYSTRACE=1
 
 LOCAL_CFLAGS += -Wall -Werror -fexceptions -frtti
 CXX11_FLAGS := -std=c++11

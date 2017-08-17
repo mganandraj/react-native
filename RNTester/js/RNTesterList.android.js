@@ -57,10 +57,10 @@ const ComponentExamples: Array<RNTesterExample> = [
     key: 'PickerExample',
     module: require('./PickerExample'),
   },
-  {
-    key: 'ProgressBarAndroidExample',
-    module: require('./ProgressBarAndroidExample'),
-  },
+  //{
+  //  key: 'ProgressBarAndroidExample',
+  //  module: require('./ProgressBarAndroidExample'),
+  //},
   {
     key: 'RefreshControlExample',
     module: require('./RefreshControlExample'),

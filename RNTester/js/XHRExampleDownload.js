@@ -16,7 +16,7 @@ const ReactNative = require('react-native');
 const {
   Alert,
   Platform,
-  ProgressBarAndroid,
+  // ProgressBarAndroid,
   ProgressViewIOS,
   StyleSheet,
   Switch,
@@ -36,11 +36,12 @@ class ProgressBar extends React.Component {
   render() {
     if (Platform.OS === 'android') {
       return (
-        <ProgressBarAndroid
-          progress={this.props.progress}
-          styleAttr="Horizontal"
-          indeterminate={false}
-        />
+        <Text />
+        //<ProgressBarAndroid
+         // progress={this.props.progress}
+         // styleAttr="Horizontal"
+        //  indeterminate={false}
+        ///>
       );
     }
     return (
