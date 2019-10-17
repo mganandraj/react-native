@@ -27,6 +27,9 @@ template class folly::Future<folly::Unit>;
 template class folly::Future<bool>;
 
 namespace folly {
+
+#if !defined(_MSC_VER)
+
 namespace futures {
 
 Future<Unit> sleep(Duration dur, Timekeeper *tk) {
@@ -34,6 +37,8 @@ Future<Unit> sleep(Duration dur, Timekeeper *tk) {
 }
 
 } // namespace futures
+
+#endif
 
 namespace detail {
 

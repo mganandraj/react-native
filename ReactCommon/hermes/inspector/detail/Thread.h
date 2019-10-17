@@ -10,7 +10,7 @@
 #include <functional>
 #include <memory>
 
-#ifndef __ANDROID__
+#if !defined(__ANDROID__) && !defined(_MSC_VER)
 #include <pthread.h>
 #include <thread>
 #endif
